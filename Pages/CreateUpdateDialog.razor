@@ -1,0 +1,157 @@
+@using System.Globalization
+@using MudDataGridAndTableSample.Data
+@inject ElementService ElementSvc
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            @(IsEdit ? "Edit" : "Create")
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="form" @bind-IsValid="@IsValid">
+            <MudStack Spacing="1">
+                <MudNumericField Label="Number"
+                                 HelperText="(HelperText)"
+                                 Culture="@CultureInfo.GetCultureInfo("en-US")"
+                                 T="int?"
+                                 @bind-Value="EditData.Number"
+                                 For="@(() => EditData.Number)"
+                                 Variant="@(IsEdit ? Variant.Filled : Variant.Text)"
+                                 Disabled="@IsEdit" />
+                <MudTextField Label="Sign"
+                              HelperText="(HelperText)"
+                              @bind-Value="EditData.Sign"
+                              For="@(() => EditData.Sign)" />
+                <MudTextField Label="Name"
+                              HelperText="(HelperText)"
+                              @bind-Value="EditData.Name"
+                              For="@(() => EditData.Name)" />
+                <MudNumericField Label="Molar"
+                                 HelperText="(HelperText)"
+                                 Format="N4"
+                                 Culture="@CultureInfo.GetCultureInfo("en-US")"
+                                 T="double?"
+                                 @bind-Value="EditData.Molar"
+                                 For="@(() => EditData.Molar)" />
+                <MudNumericField Label="MeltingPoint"
+                                 HelperText="(HelperText)"
+                                 Format="N4"
+                                 Culture="@CultureInfo.GetCultureInfo("en-US")"
+                                 T="double?"
+                                 @bind-Value="EditData.MeltingPoint"
+                                 For="@(() => EditData.MeltingPoint)"
+                                 TextChanged="(string _val) => OnMeltingPointChange(_val)" />
+                <MudNumericField Label="BoilingPoint"
+                                 HelperText="(HelperText)"
+                                 Format="N4"
+                                 Culture="@CultureInfo.GetCultureInfo("en-US")"
+                                 T="double?"
+                                 @bind-Value="EditData.BoilingPoint"
+                                 For="@(() => EditData.BoilingPoint)"
+                                 TextChanged="(string _val) => OnBoilingPointChange(_val)" />
+            </MudStack>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        @if (ErrorMessage != "")
+        {
+            <MudAlert Severity="Severity.Error" Dense="true">@ErrorMessage</MudAlert>
+            <br />
+        }
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Disabled="@(!IsValid)" OnClick="Submit">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private bool inited = false;
+    private bool IsValid = false;
+    private string ErrorMessage = "";
+    private MudForm? form;
+
+    [CascadingParameter] MudDialogInstance? MudDialog { get; set; }
+
+    [Parameter] public bool IsEdit { get; set; } = false;
+    [Parameter] public Element? InputData { get; set; }
+
+    public Element EditData { get; set; } = new();
+
+    protected override void OnInitialized()
+    {
+        if (IsEdit)
+        {
+            InputData?.CopyTo(EditData);        }    }
+
+    protected override void OnAfterRender(bool _first_render)
+    {
+        inited = true;
+    }
+
+    protected async Task OnMeltingPointChange(string newValue)
+    {
+        if (!inited)
+        {
+            return;
+        }
+
+        double set_val = 0.0;
+        if (!double.TryParse(newValue, out set_val))
+        {
+            return;
+        }
+
+        if ( form is null)
+        {
+            return;
+        }
+
+        EditData.MeltingPoint = set_val;
+        await form!.Validate();
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    protected async Task OnBoilingPointChange(string newValue)
+    {
+        if (!inited)
+        {
+            return;
+        }
+
+        double set_val = 0.0;
+        if (!double.TryParse(newValue, out set_val))
+        {
+            return;
+        }
+
+        if (form is null)
+        {
+            return;
+        }
+
+        EditData.BoilingPoint = set_val;
+        await form!.Validate();
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task Submit()
+    {
+        await form!.Validate();
+        if (!IsValid)
+        {
+            return;
+        }
+
+        if (!IsEdit && await ElementSvc.IsExists(EditData))
+        {
+            ErrorMessage = "The number already exists.";
+            return;
+        }
+
+        MudDialog?.Close(DialogResult.Ok(true));
+    }
+
+    void Cancel() => MudDialog?.Cancel();
+}

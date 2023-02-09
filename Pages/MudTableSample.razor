@@ -1,0 +1,123 @@
+@page "/MudTable"
+@inject ElementService ElementSvc
+@inject IDialogService DialogSvc
+
+<PageTitle>MudTable Sample</PageTitle>
+<MudGrid>
+    <MudItem xs="1" Class="">
+        <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.Add" Style="" Class="" OnClick="@AddItem" />
+    </MudItem>
+    <MudItem xs="11" Class="">
+        <MudTextField @bind-Value="_searchString"
+                      Placeholder="検索"
+                      Adornment="Adornment.Start"
+                      Immediate="true"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      IconSize="Size.Small"
+                      Style="margin: 0;"></MudTextField>
+    </MudItem>
+</MudGrid>
+<MudTable Breakpoint="Breakpoint.None"
+             T="Element"
+             Items="@Elements"
+             ReadOnly="@false"
+             Bordered="true"
+             Dense="true"
+             Filter="QuickFilter"
+             RowClassFunc="@_rowClassFunc">
+
+    <HeaderContent>
+        <MudTh>Nr</MudTh>
+        <MudTh>Sign</MudTh>
+        <MudTh>Name</MudTh>
+        <MudTh>Molar mass</MudTh>
+        <MudTh>Melting point</MudTh>
+        <MudTh>Boiling point</MudTh>
+        <MudTh>Edit/Del</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Nr">@context.Number</MudTd>
+        <MudTd DataLabel="Sign">@context.Sign</MudTd>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Molar mass">@context.Molar</MudTd>
+        <MudTd DataLabel="Molar mass">@context.MeltingPoint</MudTd>
+        <MudTd DataLabel="Molar mass">@context.BoilingPoint</MudTd>
+        <MudTd DataLabel="Molar mass">
+            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => EditItem(context))" />
+            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => DeleteItem(context))" />
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private IEnumerable<Element> Elements = new List<Element>();
+    private string _searchString = "";
+
+    private Func<Element, int, string> _rowClassFunc => (x, i) =>
+    {
+        if (x.Number % 2 == 0)
+            return "target";
+
+        return "";
+    };
+
+    private bool QuickFilter(Element _element)
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if ($"{_element.Sign} {_element.Name} {_element.Number} {_element.Molar} {_element.MeltingPoint} {_element.BoilingPoint}".Contains(_searchString))
+            return true;
+
+        return false;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var tmp = await ElementSvc.GetElementAsync();
+        Elements = tmp.AsEnumerable();
+    }
+
+    private async Task AddItem()
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("IsEdit", false);
+
+        var dialog = DialogSvc.Show<CreateUpdateDialog>("Create", parameters);
+        var result = await dialog.Result;
+        if (!result.Cancelled && (dialog.Dialog is not null) && (dialog.Dialog is CreateUpdateDialog cu_dialog))
+        {
+            await ElementSvc.AddElement(cu_dialog.EditData);
+        }
+    }
+
+    private async Task EditItem(Element _item)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("IsEdit", true);
+        parameters.Add("InputData", _item);
+
+        var dialog = DialogSvc.Show<CreateUpdateDialog>("Edit", parameters);
+        var result = await dialog.Result;
+        if (!result.Cancelled && (dialog.Dialog is not null) && (dialog.Dialog is CreateUpdateDialog cu_dialog))
+        {
+            await ElementSvc.EditElement(cu_dialog.EditData);
+        }
+    }
+
+    private async Task DeleteItem(Element _item)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("EditData", _item);
+
+        var dialog = DialogSvc.Show<DeleteConfirmDialog>("Confirm", parameters);
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            await ElementSvc.DeleteElement(_item);
+        }
+    }
+}

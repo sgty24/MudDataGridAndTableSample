@@ -1,0 +1,55 @@
+@using System.Globalization
+@using MudDataGridAndTableSample.Data
+@inject ElementService ElementSvc
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            Confirm Delete
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="1">
+            <MudText>Delete the following elements Are you sure?</MudText>
+            <table>
+                <tr>
+                    <td>Number :</td>
+                    <td>@EditData.Number</td>
+                </tr>
+                <tr>
+                    <td>Sign :</td>
+                    <td>@EditData.Sign</td>
+                </tr>
+                <tr>
+                    <td>Name :</td>
+                    <td>@EditData.Name</td>
+                </tr>
+                <tr>
+                    <td>Molar :</td>
+                    <td>@EditData.Molar</td>
+                </tr>
+                <tr>
+                    <td>Melting point :</td>
+                    <td>@EditData.MeltingPoint</td>
+                </tr>
+                <tr>
+                    <td>Boiling point :</td>
+                    <td>@EditData.BoilingPoint</td>
+                </tr>
+            </table>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance? MudDialog { get; set; }
+
+    [Parameter] public Element EditData { get; set; } = new();
+
+    void Submit() => MudDialog?.Close(DialogResult.Ok(true));
+    void Cancel() => MudDialog?.Cancel();
+}

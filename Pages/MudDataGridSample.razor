@@ -1,0 +1,108 @@
+@page "/"
+@inject ElementService ElementSvc
+@inject IDialogService DialogSvc
+
+<PageTitle>MudDataGrid Sample</PageTitle>
+<MudGrid>
+    <MudItem xs="1" Class="">
+        <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.Add" Style="" Class="" OnClick="@AddItem" />
+    </MudItem>
+    <MudItem xs="11" Class="">
+        <MudTextField @bind-Value="_searchString"
+                      Placeholder="検索"
+                      Adornment="Adornment.Start"
+                      Immediate="true"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      IconSize="Size.Small"
+                      Style="margin: 0;"></MudTextField>
+    </MudItem>
+</MudGrid>
+<MudDataGrid Breakpoint="Breakpoint.None"
+             T="Element"
+             Items="@Elements"
+             ReadOnly="@false"
+             EditMode="@DataGridEditMode.Form"
+             CommittedItemChanges="@CommittedItemChanges"
+             Bordered="true"
+             Dense="true"
+             EditTrigger="@DataGridEditTrigger.Manual"
+             QuickFilter="@_quickFilter"
+             RowClassFunc="@_rowClassFunc">
+    <Columns>
+        <Column T="Element" Field="Number" Title="Nr" IsEditable="false" Sortable="false" />
+        <Column T="Element" Field="Sign" Sortable="false" />
+        <Column T="Element" Field="Name" Sortable="false" />
+        <Column T="Element" Field="Molar" Title="Molar mass" Sortable="false" />
+        <Column T="Element" Field="MeltingPoint" Title="Melting point" Sortable="false" />
+        <Column T="Element" Field="BoilingPoint" Title="Boiling point" Sortable="false" />
+        <Column T="Element" Sortable="false">
+            <CellTemplate>
+                <MudStack Row="true">
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@context.Actions.StartEditingItem" />
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => DeleteItem(context.Item))" />
+                </MudStack>
+            </CellTemplate>
+        </Column>
+    </Columns>
+</MudDataGrid>
+
+@code {
+    private IEnumerable<Element> Elements = new List<Element>();
+    private string _searchString = "";
+
+    private Func<Element, int, string> _rowClassFunc => (x, i) =>
+    {
+        if (x.Number % 2 == 0)
+            return "target";
+
+        return "";
+    };
+
+    private Func<Element, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if ($"{x.Sign} {x.Name} {x.Number} {x.Molar} {x.MeltingPoint} {x.BoilingPoint}".Contains(_searchString))
+            return true;
+
+        return false;
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var tmp = await ElementSvc.GetElementAsync();
+        Elements = tmp.AsEnumerable();
+    }
+
+    private async Task CommittedItemChanges(Element _item)
+    {
+        await ElementSvc.EditElement(_item);
+    }
+
+    private async Task AddItem()
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("IsEdit", false);
+
+        var dialog = DialogSvc.Show<CreateUpdateDialog>("Delete Server", parameters);
+        var result = await dialog.Result;
+        if (!result.Cancelled && (dialog.Dialog is not null) && (dialog.Dialog is CreateUpdateDialog cu_dialog))
+        {
+            await ElementSvc.AddElement(cu_dialog.EditData);
+        }
+    }
+    
+    private async Task DeleteItem(Element _item)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("EditData", _item);
+
+        var dialog = DialogSvc.Show<DeleteConfirmDialog>("Confirm", parameters);
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            await ElementSvc.DeleteElement(_item);
+        }
+    }
+}
