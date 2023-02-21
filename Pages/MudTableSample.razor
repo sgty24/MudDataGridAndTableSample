@@ -1,14 +1,46 @@
 @page "/MudTable"
+@using System
+@using System.IO
+@using System.Text
+@using Microsoft.AspNetCore.Hosting
+@inject IJSRuntime JS
+@inject IWebHostEnvironment Environment
 @inject ElementService ElementSvc
 @inject IDialogService DialogSvc
 
 <PageTitle>MudTable Sample</PageTitle>
+@if (ErrorMessage != "")
+{
+    <MudAlert Severity="Severity.Error" Dense="true">@ErrorMessage</MudAlert>
+}
 <MudGrid>
-    <MudItem xs="1" Class="">
+    <MudItem xs="6" Class="mt-3 mb-0 py-0">
+        <MudFileUpload T="IBrowserFile" FilesChanged="UploadFiles" Class="">
+            <ButtonTemplate>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.CloudUpload"
+                           for="@context"
+                           Class="w-100 py-0 mt-0 mb-0">
+                    Upload File
+                </MudButton>
+            </ButtonTemplate>
+        </MudFileUpload>
+    </MudItem>
+    <MudItem xs="6" Class="mt-3 mb-0 py-0">
+        <div class="mud-input-control">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.CloudDownload"
+                       Class="w-100 py-0 mt-0 mb-0"
+                       OnClick="@Download">Download File</MudButton>
+        </div>
+    </MudItem>
+    <MudItem xs="1" Class="mb-1 py-0">
         <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.Add" Style="" Class="" OnClick="@AddItem" />
     </MudItem>
-    <MudItem xs="11" Class="">
-        <MudTextField @bind-Value="_searchString"
+    <MudItem xs="11" Class="mb-1 py-0">
+        <MudTextField @bind-Value="SearchString"
                       Placeholder="検索"
                       Adornment="Adornment.Start"
                       Immediate="true"
@@ -18,13 +50,14 @@
     </MudItem>
 </MudGrid>
 <MudTable Breakpoint="Breakpoint.None"
-             T="Element"
-             Items="@Elements"
-             ReadOnly="@false"
-             Bordered="true"
-             Dense="true"
-             Filter="QuickFilter"
-             RowClassFunc="@_rowClassFunc">
+          T="Element"
+          Items="@Elements"
+          ReadOnly="@false"
+          Bordered="true"
+          Dense="true"
+          Filter="QuickFilter"
+          HeaderClass="table-header"
+          RowClassFunc="@RowClassFunc">
 
     <HeaderContent>
         <MudTh>Nr</MudTh>
@@ -54,23 +87,70 @@
 
 @code {
     private IEnumerable<Element> Elements = new List<Element>();
-    private string _searchString = "";
+    private string SearchString = "";
+    private string ErrorMessage = "";
 
-    private Func<Element, int, string> _rowClassFunc => (x, i) =>
+    private async Task UploadFiles(IBrowserFile _file)
     {
-        if (x.Number % 2 == 0)
-            return "target";
+        var fs = _file.OpenReadStream();
+        if (fs is null)
+        {
+            return;
+        }
 
-        return "";
-    };
+        var ret = await ElementSvc.LoadfromCSV(fs);
+        if (ret.sucsess)
+        {
+            var options = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+            var parameters = new DialogParameters();
+            parameters.Add("Befor", await ElementSvc.GetElementBeforAsync());
+            parameters.Add("Dif", await ElementSvc.GetElementDifAsync());
+
+            var dialog = DialogSvc.Show<CSVConfirmDialog>("Confirm", parameters, options);
+            var result = await dialog.Result;
+            if (result.Canceled)
+            {
+                ElementSvc.Cancel();
+            }
+            else
+            {
+                ElementSvc.Commit();
+            }
+        }
+        else
+        {
+            var parameters = new DialogParameters();
+            parameters.Add("ErrorMessage", ret.err_msg);
+
+            DialogSvc.Show<ErrorDialog>("Error", parameters);
+        }
+    }
+
+    private string RowClassFunc(Element _element, int _index)
+    {
+        // This can be achieved with the Striped property, 
+        // but we dare to use RowClassFunc for more complex cases.
+        if (_element.Number % 2 == 0)
+        {
+            return "target";
+        }
+        else
+        {
+            return "";
+        }
+    }
 
     private bool QuickFilter(Element _element)
     {
-        if (string.IsNullOrWhiteSpace(_searchString))
+        if (string.IsNullOrWhiteSpace(SearchString))
+        {
             return true;
+        }
 
-        if ($"{_element.Sign} {_element.Name} {_element.Number} {_element.Molar} {_element.MeltingPoint} {_element.BoilingPoint}".Contains(_searchString))
+        if ($"{_element.Sign} {_element.Name} {_element.Number} {_element.Molar} {_element.MeltingPoint} {_element.BoilingPoint}".Contains(SearchString))
+        {
             return true;
+        }
 
         return false;
     }
@@ -81,6 +161,27 @@
         Elements = tmp.AsEnumerable();
     }
 
+    private async Task Download()
+    {
+        try
+        {
+            using (var stream = new MemoryStream())
+            using (var writer = new StreamWriter(stream, Encoding.UTF8))
+            {
+                var file_name = "Elements.csv";
+                await ElementSvc.WriteCSV(writer);
+                stream.Seek(0, SeekOrigin.Begin);
+
+                await JS.InvokeVoidAsync("DownloadFileFromStream", file_name, new DotNetStreamReference(stream: stream));
+            }
+        }
+        catch (Exception _ex)
+        {
+            ErrorMessage = _ex.Message;
+            StateHasChanged();
+        }
+    }
+
     private async Task AddItem()
     {
         var parameters = new DialogParameters();
@@ -88,7 +189,7 @@
 
         var dialog = DialogSvc.Show<CreateUpdateDialog>("Create", parameters);
         var result = await dialog.Result;
-        if (!result.Cancelled && (dialog.Dialog is not null) && (dialog.Dialog is CreateUpdateDialog cu_dialog))
+        if (!result.Canceled && (dialog.Dialog is not null) && (dialog.Dialog is CreateUpdateDialog cu_dialog))
         {
             await ElementSvc.AddElement(cu_dialog.EditData);
         }
@@ -102,7 +203,7 @@
 
         var dialog = DialogSvc.Show<CreateUpdateDialog>("Edit", parameters);
         var result = await dialog.Result;
-        if (!result.Cancelled && (dialog.Dialog is not null) && (dialog.Dialog is CreateUpdateDialog cu_dialog))
+        if (!result.Canceled && (dialog.Dialog is not null) && (dialog.Dialog is CreateUpdateDialog cu_dialog))
         {
             await ElementSvc.EditElement(cu_dialog.EditData);
         }
@@ -115,7 +216,7 @@
 
         var dialog = DialogSvc.Show<DeleteConfirmDialog>("Confirm", parameters);
         var result = await dialog.Result;
-        if (!result.Cancelled)
+        if (!result.Canceled)
         {
             await ElementSvc.DeleteElement(_item);
         }

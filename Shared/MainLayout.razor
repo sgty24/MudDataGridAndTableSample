@@ -11,9 +11,12 @@
         <MudIconButton Icon="@Icons.Custom.Brands.MudBlazor" Color="Color.Inherit" Link="https://mudblazor.com/" Target="_blank" />
         <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Link="https://github.com/MudBlazor/MudBlazor/" Target="_blank" />
     </MudAppBar>
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="1">
-        <MudDrawerHeader>
-            <MudText Typo="Typo.h6">MudDataGridAndTableSample</MudText>
+    <MudDrawer @bind-Open="DrawerOpen" Elevation="1">
+        <MudDrawerHeader Class="drawer-header">
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.subtitle1" Class="py-0 m-0 header-text">MudDataGrid</MudText>
+                <MudText Typo="Typo.subtitle1" Class="py-0 m-0 header-text"> And TableSample</MudText>
+            </MudStack>
         </MudDrawerHeader>
         <NavMenu />
     </MudDrawer>
@@ -25,10 +28,10 @@
 </MudLayout>
 
 @code {
-    bool _drawerOpen = true;
+    bool DrawerOpen = true;
 
     void DrawerToggle()
     {
-        _drawerOpen = !_drawerOpen;
+        DrawerOpen = !DrawerOpen;
     }
 }

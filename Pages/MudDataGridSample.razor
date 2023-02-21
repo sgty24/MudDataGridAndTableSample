@@ -8,7 +8,7 @@
         <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.Add" Style="" Class="" OnClick="@AddItem" />
     </MudItem>
     <MudItem xs="11" Class="">
-        <MudTextField @bind-Value="_searchString"
+        <MudTextField @bind-Value="SearchString"
                       Placeholder="検索"
                       Adornment="Adornment.Start"
                       Immediate="true"
@@ -23,11 +23,11 @@
              ReadOnly="@false"
              EditMode="@DataGridEditMode.Form"
              CommittedItemChanges="@CommittedItemChanges"
-             Bordered="true"
+             Bordered="true" g
              Dense="true"
              EditTrigger="@DataGridEditTrigger.Manual"
-             QuickFilter="@_quickFilter"
-             RowClassFunc="@_rowClassFunc">
+             QuickFilter="@QuickFilter"
+             RowClassFunc="@RowClassFunc">
     <Columns>
         <Column T="Element" Field="Number" Title="Nr" IsEditable="false" Sortable="false" />
         <Column T="Element" Field="Sign" Sortable="false" />
@@ -48,23 +48,32 @@
 
 @code {
     private IEnumerable<Element> Elements = new List<Element>();
-    private string _searchString = "";
+    private string SearchString = "";
 
-    private Func<Element, int, string> _rowClassFunc => (x, i) =>
+    private Func<Element, int, string> RowClassFunc => (_element, _index) =>
     {
-        if (x.Number % 2 == 0)
+        //If using Func<T>, we can be switch RowClassFunc depending on the situation.
+        if (_element.Number % 2 == 0)
+        {
             return "target";
-
-        return "";
+        }
+        else
+        {
+            return "";
+        }
     };
 
-    private Func<Element, bool> _quickFilter => x =>
+    private Func<Element, bool> QuickFilter => _element =>
     {
-        if (string.IsNullOrWhiteSpace(_searchString))
+        if (string.IsNullOrWhiteSpace(SearchString))
+        {
             return true;
+        }
 
-        if ($"{x.Sign} {x.Name} {x.Number} {x.Molar} {x.MeltingPoint} {x.BoilingPoint}".Contains(_searchString))
+        if ($"{_element.Sign} {_element.Name} {_element.Number} {_element.Molar} {_element.MeltingPoint} {_element.BoilingPoint}".Contains(SearchString))
+        {
             return true;
+        }
 
         return false;
     };
@@ -87,12 +96,12 @@
 
         var dialog = DialogSvc.Show<CreateUpdateDialog>("Delete Server", parameters);
         var result = await dialog.Result;
-        if (!result.Cancelled && (dialog.Dialog is not null) && (dialog.Dialog is CreateUpdateDialog cu_dialog))
+        if (!result.Canceled && (dialog.Dialog is not null) && (dialog.Dialog is CreateUpdateDialog cu_dialog))
         {
             await ElementSvc.AddElement(cu_dialog.EditData);
         }
     }
-    
+
     private async Task DeleteItem(Element _item)
     {
         var parameters = new DialogParameters();
@@ -100,7 +109,7 @@
 
         var dialog = DialogSvc.Show<DeleteConfirmDialog>("Confirm", parameters);
         var result = await dialog.Result;
-        if (!result.Cancelled)
+        if (!result.Canceled)
         {
             await ElementSvc.DeleteElement(_item);
         }

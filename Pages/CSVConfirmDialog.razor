@@ -1,0 +1,95 @@
+@using System.Globalization
+@using MudDataGridAndTableSample.Data
+@inject ElementService ElementSvc
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            Confirm CSV Update
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="1">
+            @if (Befor is null || Dif is null)
+            {
+                <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Dense="true">System Error.</MudAlert>
+            }
+            else if (Dif is IEnumerable<Element> dif_list_pre && dif_list_pre.Count() <= 1)
+            {
+                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true">No Changed.</MudAlert>
+            }
+            else
+            {
+                <MudText>Update the following elements Are you sure?</MudText>
+                <MudDivider />
+                @if (Befor is IEnumerable<Element> befor_list && 0 < befor_list.Count())
+                {
+                    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true">Befor</MudAlert>
+                    <MudTable Items="@befor_list" Dense="true" Bordered="true">
+                        <HeaderContent>
+                            <MudTh>No.</MudTh>
+                            <MudTh>Sign</MudTh>
+                            <MudTh>Name</MudTh>
+                            <MudTh>Molar</MudTh>
+                            <MudTh>Sublimation</MudTh>
+                            <MudTh>MeltingPoint</MudTh>
+                            <MudTh>BoilingPoint</MudTh>
+                            <MudTh>InputDate</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="No.">@context.Number</MudTd>
+                            <MudTd DataLabel="Sign">@context.Sign</MudTd>
+                            <MudTd DataLabel="Name">@context.Name</MudTd>
+                            <MudTd DataLabel="Molar">@context.Molar</MudTd>
+                            <MudTd DataLabel="Sublimation">@context.Sublimation</MudTd>
+                            <MudTd DataLabel="MeltingPoint">@context.MeltingPoint</MudTd>
+                            <MudTd DataLabel="BoilingPoint">@context.BoilingPoint</MudTd>
+                            <MudTd DataLabel="InputDate">@context.InputDate</MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                    <MudDivider DividerType="DividerType.Middle" Class="my-6" />
+                }
+                @if (Dif is IEnumerable<Element> dif_list && 0 < dif_list.Count())
+                {
+                    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true">Difference</MudAlert>
+                    <MudTable Items="@dif_list" Dense="true" Bordered="true">
+                        <HeaderContent>
+                            <MudTh>No.</MudTh>
+                            <MudTh>Sign</MudTh>
+                            <MudTh>Name</MudTh>
+                            <MudTh>Molar</MudTh>
+                            <MudTh>Sublimation</MudTh>
+                            <MudTh>MeltingPoint</MudTh>
+                            <MudTh>BoilingPoint</MudTh>
+                            <MudTh>InputDate</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="No.">@context.Number</MudTd>
+                            <MudTd DataLabel="Sign">@context.Sign</MudTd>
+                            <MudTd DataLabel="Name">@context.Name</MudTd>
+                            <MudTd DataLabel="Molar">@context.Molar</MudTd>
+                            <MudTd DataLabel="Sublimation">@context.Sublimation</MudTd>
+                            <MudTd DataLabel="MeltingPoint">@context.MeltingPoint</MudTd>
+                            <MudTd DataLabel="BoilingPoint">@context.BoilingPoint</MudTd>
+                            <MudTd DataLabel="InputDate">@context.InputDate</MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance? MudDialog { get; set; }
+
+    [Parameter] public IEnumerable<Element>? Befor { get; set; }
+    [Parameter] public IEnumerable<Element>? Dif { get; set; }
+
+    void Submit() => MudDialog?.Close(DialogResult.Ok(true));
+    void Cancel() => MudDialog?.Cancel();
+}

@@ -27,6 +27,10 @@
                               HelperText="(HelperText)"
                               @bind-Value="EditData.Name"
                               For="@(() => EditData.Name)" />
+                <MudCheckBox Label="Sublimation"
+                             Checked="EditData.Sublimation"
+                             For="@(() => EditData.Sublimation)"
+                             CheckedChanged="@((bool _val)=>OnSublimationChange(_val))" />
                 <MudNumericField Label="Molar"
                                  HelperText="(HelperText)"
                                  Format="N4"
@@ -50,6 +54,17 @@
                                  @bind-Value="EditData.BoilingPoint"
                                  For="@(() => EditData.BoilingPoint)"
                                  TextChanged="(string _val) => OnBoilingPointChange(_val)" />
+                <MudDatePicker Label="InputDate"
+                               HelperText="(HelperText)"
+                               Editable="true"
+                               DisableToolbar="true"
+                               DateFormat="yyyy/MM/dd"
+                               @bind-Date="EditData.InputDate"
+                               For="@(() => EditData.InputDate)" />
+                <MudTimePicker Label="InputDate"
+                               Editable="true"
+                               HelperText="(HelperText)"
+                               @bind-Time="EditData.InputTime" />
             </MudStack>
         </MudForm>
     </DialogContent>
@@ -65,7 +80,7 @@
 </MudDialog>
 
 @code {
-    private bool inited = false;
+    private bool IsInited = false;
     private bool IsValid = false;
     private string ErrorMessage = "";
     private MudForm? form;
@@ -81,27 +96,37 @@
     {
         if (IsEdit)
         {
-            InputData?.CopyTo(EditData);        }    }
+            InputData?.CopyTo(EditData);
+        }
+    }
 
     protected override void OnAfterRender(bool _first_render)
     {
-        inited = true;
+        IsInited = true;
     }
 
-    protected async Task OnMeltingPointChange(string newValue)
+    protected async Task OnSublimationChange(bool _new_value)
     {
-        if (!inited)
+        if (!IsInited || form is null)
+        {
+            return;
+        }
+
+        EditData.Sublimation = _new_value;
+        await form!.Validate();
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    protected async Task OnMeltingPointChange(string _new_value)
+    {
+        if (!IsInited || form is null)
         {
             return;
         }
 
         double set_val = 0.0;
-        if (!double.TryParse(newValue, out set_val))
-        {
-            return;
-        }
-
-        if ( form is null)
+        if (!double.TryParse(_new_value, out set_val))
         {
             return;
         }
@@ -112,20 +137,15 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    protected async Task OnBoilingPointChange(string newValue)
+    protected async Task OnBoilingPointChange(string _new_value)
     {
-        if (!inited)
+        if (!IsInited || form is null)
         {
             return;
         }
 
         double set_val = 0.0;
-        if (!double.TryParse(newValue, out set_val))
-        {
-            return;
-        }
-
-        if (form is null)
+        if (!double.TryParse(_new_value, out set_val))
         {
             return;
         }

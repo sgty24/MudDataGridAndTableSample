@@ -1,0 +1,27 @@
+body {
+    .drawer-header {
+        background-color: #2210BD;
+        color: white;
+        height: var(--mud-appbar-height);
+
+        .header-text {
+            line-height: 20px;
+        }
+    }
+
+    .target {
+        background-color: #F4F4F4;
+    }
+
+    .table-header {
+        background-color: var(--mud-palette-appbar-background);
+
+        th {
+            color: white !important;
+        }
+    }
+
+    .mud-file-upload > .mud-input-control-input-container {
+        display: flex !important;
+    }
+}

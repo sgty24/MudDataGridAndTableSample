@@ -1,0 +1,20 @@
+﻿body .drawer-header {
+  background-color: #2210BD;
+  color: white;
+  height: var(--mud-appbar-height);
+}
+body .drawer-header .header-text {
+  line-height: 20px;
+}
+body .target {
+  background-color: #F4F4F4;
+}
+body .table-header {
+  background-color: var(--mud-palette-appbar-background);
+}
+body .table-header th {
+  color: white !important;
+}
+body .mud-file-upload > .mud-input-control-input-container {
+  display: flex !important;
+}
