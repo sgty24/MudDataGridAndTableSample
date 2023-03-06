@@ -15,13 +15,14 @@
 }
 <MudGrid>
     <MudItem xs="6" Class="mt-3 mb-0 py-0">
-        <MudFileUpload T="IBrowserFile" FilesChanged="UploadFiles" Class="">
+        <MudFileUpload T="IBrowserFile" FilesChanged="UploadFiles">
             <ButtonTemplate>
-                <MudButton Variant="Variant.Filled"
+                <MudButton HtmlTag="label"
+                           Variant="Variant.Filled"
                            Color="Color.Primary"
                            StartIcon="@Icons.Material.Filled.CloudUpload"
-                           for="@context"
-                           Class="w-100 py-0 mt-0 mb-0">
+                            Class="w-100 py-0 mt-0 mb-0"
+                           for="@context">
                     Upload File
                 </MudButton>
             </ButtonTemplate>
